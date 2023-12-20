@@ -381,7 +381,7 @@ paths:
       tags:
         - dids
       summary: Create DID
-      description: Creates a new DID on chain with an auto generated keypair, the controller will be the same as the DID unless otherwise specified. More info about [Create DID](https://docs.api.selfid.com/#create-did)
+      description: Creates a new DID with the specified public keys. More info about [Create DID](https://docs.api.selfid.com/#create-did)
       requestBody:
         description: Properties of DID
         required: false
@@ -394,10 +394,26 @@ paths:
                   $ref: '#/components/schemas/DID'
                 controller:
                   $ref: '#/components/schemas/DID'
-                keyType:
+                publicKeys:
                   $ref: '#/components/schemas/KeyType'
               example:
-                keyType: 'ed25519'
+                {
+                    "publicKeys": [
+                        {
+                            "id": "key-1",
+                            "type": "EcdsaSecp256k1VerificationKey2019",
+                            "publicKeyJwk": {
+                                "kty": "EC",
+                                "crv": "secp256k1",
+                                "x": "4iQpf1BVU9OgARmu7NQSGcHs5AKtwzBsCwI1PbRhhLU",
+                                "y": "u-b-vMlJ3pEbP1siGmyvB_ZwCM7mOgSdHXLxzt5TIGg"
+                            },
+                            "purposes": [
+                                "authentication"
+                            ]
+                        }
+                    ]
+                }
       responses:
         '200':
           description: DID will be created on the network.
