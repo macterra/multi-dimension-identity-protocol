@@ -71,7 +71,7 @@ components:
         - EcdsaSecp256k1Signature2019
         - Bls12381BBS+SignatureDock2022
     ProofPurpose:
-      description: Purpose of molecule
+      description: Purpose of credential
       type : string
       enum:
         - assertionMethod
@@ -99,7 +99,7 @@ components:
             oneOf:
               - type: object
               - type: string
-    molecule:
+    Credential:
       description: Format to create credentials with the API
       type: object
       properties:
@@ -157,14 +157,14 @@ components:
           type: array
           items:
             type: string
-        verifiablemolecule:
+        VerifiableCredential:
           oneOf:
             - type: object
-              $ref: '#/components/schemas/Verifiablemolecule'
+              $ref: '#/components/schemas/VerifiableCredential'
             - type: array
               items:
                 type: object
-                $ref: '#/components/schemas/Verifiablemolecule'
+                $ref: '#/components/schemas/VerifiableCredential'
         proof:
           type: object
           properties:
@@ -179,8 +179,8 @@ components:
               format: date-time
             proofValue:
               type: string
-    Verifiablemolecule:
-      description: Verifiable (signed) molecule returned by API. The current set of properties is almost complete
+    VerifiableCredential:
+      description: Verifiable (signed) credential returned by API. The current set of properties is almost complete
       type: object
       properties:
         "@context":
@@ -229,7 +229,7 @@ components:
             proofValue:
               type: string
     VerificationResponse:
-      description: Whether a molecule/presentation/anchor is verified or not
+      description: Whether a credential/presentation/anchor is verified or not
       type: object
       properties:
         verified:
@@ -545,7 +545,7 @@ paths:
       tags:
         - credentials
       summary: List credentials
-      description: Get all molecule metadata
+      description: Get all credential metadata
       # parameters:
       #   - name: offset
       #     in: query
@@ -578,8 +578,8 @@ paths:
     post:
       tags:
         - credentials
-      summary: Issue a molecule
-      description: Creates and issues a verifiable molecule with supplied data. More info about [Issue a molecule](https://docs.api.selfid.com/#credentials)
+      summary: Issue a credential
+      description: Creates and issues a verifiable credential with supplied data. More info about [Issue a credential](https://docs.api.selfid.com/#credentials)
       requestBody:
         description: JSON-schema
         required: true
@@ -588,37 +588,37 @@ paths:
             schema:
               type: object
               required:
-                - molecule
+                - credential
               properties:
                 persist:
                   type: boolean
                   default: false
-                  description: Whether to persist this molecule in our systems, giving it its own web page and import options
+                  description: Whether to persist this credential in our systems, giving it its own web page and import options
                 password:
                   type: string
                   maxLength: 32
                   minLength: 4
-                  description: Password to encrypt this molecule with, required if persist is set to true
+                  description: Password to encrypt this credential with, required if persist is set to true
                 anchor:
                   type: boolean
                   default: false
-                  description: Anchor the molecule on the blockchain or not
+                  description: Anchor the credential on the blockchain or not
                 template:
                   type: string
                   format: uuid
-                  description: The molecule template ID
+                  description: The credential template ID
                 algorithm:
                   type: string
                   maxLength: 32
                   minLength: 4
                   description: Optional algorithm parameter, such as mdipbbs+
-                molecule:
-                  $ref: '#/components/schemas/molecule'
+                credential:
+                  $ref: '#/components/schemas/credential'
             example:
               persist: false
               anchor: true
               template: templateid
-              molecule:
+              credential:
                 id: http://example.com
                 context:
                   - https://www.w3.org/2018/credentials/examples/v1
@@ -629,23 +629,23 @@ paths:
                   degree:
                     type: BachelorDegree
                     name: Bachelor of Science and Arts
-                issuer: Paste here your Dock DID i.e. did:mdip:xyz...
+                issuer: Paste here your MDIP DID i.e. did:mdip:xyz...
                 issuanceDate: '2020-08-24T14:15:22Z'
 
       responses:
         '200':
-          description: Example response of a created verifiable molecule.
+          description: Example response of a created verifiable credential.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Verifiablemolecule'
+                $ref: '#/components/schemas/VerifiableCredential'
               example:
                 '@context':
                   - https://www.w3.org/2018/credentials/v1
                   - https://www.w3.org/2018/credentials/examples/v1
                 id: http://example.com
                 type:
-                  - Verifiablemolecule
+                  - VerifiableCredential
                   - UniversityDegreemolecule
                 credentialsubject:
                   id: Sample Subject
@@ -661,7 +661,7 @@ paths:
                   proofValue: z7zTs4pVjGyj68WwsnJ6bCoK2CnWFBW5xmSBin7LxcgoYfzET4YXAZcTF9qQBTVhfVC5hK4FUWp9XAedq8Tep8J6
                 issuer: did:mdip:YourDIDValue
         '400':
-          description: Invalid/insufficient molecule params.
+          description: Invalid/insufficient credential params.
           content:
             application/json:
               schema:
@@ -695,7 +695,7 @@ paths:
       - name: password
         in: query
         required: false
-        description: The encryption password used when issuing/storing the molecule
+        description: The encryption password used when issuing/storing the credential
         schema:
           type: string
           maxLength: 32
@@ -703,23 +703,23 @@ paths:
     get:
       tags:
         - credentials
-      summary: Get molecule metadata and contents
-      description: Get molecule metadata and contents
+      summary: Get credential metadata and contents
+      description: Get credential metadata and contents
       responses:
         '200':
-          description: The molecule metadata and contents (if password is supplied)
+          description: The credential metadata and contents (if password is supplied)
           content:
             application/json:
               schema:
                 type: object
         '404':
-          description: molecule was not found.
+          description: credential was not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '400':
-          description: Error retrieving the molecule
+          description: Error retrieving the credential
           content:
             application/json:
               schema:
@@ -727,23 +727,23 @@ paths:
     post:
       tags:
         - credentials
-      summary: Update molecule metadata and contents
-      description: Update molecule metadata and contents
+      summary: Update credential metadata and contents
+      description: Update credential metadata and contents
       responses:
         '200':
-          description: The molecule metadata and contents
+          description: The credential metadata and contents
           content:
             application/json:
               schema:
                 type: object
         '404':
-          description: molecule was not found.
+          description: credential was not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '400':
-          description: Error retrieving the molecule
+          description: Error retrieving the credential
           content:
             application/json:
               schema:
@@ -751,23 +751,23 @@ paths:
     delete:
       tags:
         - credentials
-      summary: Delete a molecule
-      description: Deletes all molecule metadata and contents from the client. More info about [Delete credentials](https://docs.api.selfid.com/#UpdateLink-Delete-credentials)
+      summary: Delete a credential
+      description: Deletes all credential metadata and contents from the client. More info about [Delete credentials](https://docs.api.selfid.com/#UpdateLink-Delete-credentials)
       responses:
         '200':
-          description: molecule has been deleted.
+          description: credential has been deleted.
           content:
             application/json:
               schema:
                 type: object
         '404':
-          description: molecule was not found.
+          description: credential was not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '400':
-          description: Error retrieving the molecule
+          description: Error retrieving the credential
           content:
             application/json:
               schema:
@@ -797,14 +797,14 @@ paths:
                   type: string
                 credentials:
                   items:
-                    $ref: '#/components/schemas/Verifiablemolecule'
+                    $ref: '#/components/schemas/VerifiableCredential'
                   type: array
             example:
               challenge: my challenge
               domain: selfid.com
               holder: 'did:DID:Provide_Here_Your_Holder_DID'
               credentials:
-                - 'Paste here the output of your issued credentials from POST /credentials - Issue a molecule'
+                - 'Paste here the output of your issued credentials from POST /credentials - Issue a credential'
 
       responses:
         '200':
@@ -816,13 +816,13 @@ paths:
               example:
                 '@context':
                   - https://www.w3.org/2018/credentials/v1
-                verifiablemolecule:
+                VerifiableCredential:
                   - '@context':
                       - https://www.w3.org/2018/credentials/v1
                       - https://www.w3.org/2018/credentials/examples/v1
                     id: http://example.com
                     type:
-                      - Verifiablemolecule
+                      - VerifiableCredential
                       - UniversityDegreemolecule
                     credentialsubject:
                       id: Sample Subject
@@ -849,7 +849,7 @@ paths:
                   domain: selfid.com
                   proofValue: z2DbHkByXbHqnGTU5f54Q7QzRVMfSqmaiXqE562fFuZRdFdMGnjTZEFxnc8k4NKXiJpRyyvovJuixdLYahfMcDLkM
         '400':
-          description: Invalid/insufficient molecule params.
+          description: Invalid/insufficient credential params.
           content:
             application/json:
               schema:
@@ -870,8 +870,8 @@ paths:
     post:
       tags:
         - verify
-      summary: Verify a molecule or presentation
-      description: Verifies a VCDM molecule or presentation JSON-LD object. More info about [Verify credentials/Presentations](https://docs.api.selfid.com/#tocS_molecule)
+      summary: Verify a credential or presentation
+      description: Verifies a VCDM credential or presentation JSON-LD object. More info about [Verify credentials/Presentations](https://docs.api.selfid.com/#tocS_molecule)
       requestBody:
         description: JSON-schema
         required: true
@@ -912,7 +912,7 @@ paths:
                         publicKey: did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
                       publicKeyBase58: HLc4pieaW9njdLk6zitziVYU7LgVpqKDxDrDRCJCB1er
         '400':
-          description: Invalid/insufficient molecule params.
+          description: Invalid/insufficient credential params.
           content:
             application/json:
               schema:
@@ -922,7 +922,7 @@ paths:
     post:
       tags:
         - schemas
-      summary: Create molecule Schema
+      summary: Create credential Schema
       description: Creates a JSON schema on the blockchain. More info about [Schema Creation](https://docs.api.selfid.com/#create-schema)
       requestBody:
         description: JSON-schema
@@ -944,7 +944,7 @@ paths:
                   id: 1a678fe6973f34d2a5c016cbff357161b9a595f5cc44a3e15f1eca2a404f294a
                   schema:
                     $schema: http://json-schema.org/draft-07/schema#
-                    description: Dock Schema Example
+                    description: MDIP Schema Example
                     type: object
                     properties:
                       id:
@@ -1008,7 +1008,7 @@ paths:
                     "id": "db0c559035226419b4061d7c725a6d7d8aeebd3acf784fd0d69c9a033f29a8d1",
                     "schema": {
                       "$schema": "http://json-schema.org/draft-07/schema#",
-                      "description": "Dock Schema Example",
+                      "description": "MDIP Schema Example",
                       "type": "object",
                       "properties": {
                         "id": {
@@ -1035,7 +1035,7 @@ paths:
                     "id": "f408d91da3ebab27f2d50150f7cf54ab14099b3ab5f53e2cbf208a90d6adbfd7",
                     "schema": {
                       "$schema": "http://json-schema.org/draft-07/schema#",
-                      "description": "Dock Schema Example",
+                      "description": "MDIP Schema Example",
                       "type": "object",
                       "properties": {
                         "id": {
@@ -1062,7 +1062,7 @@ paths:
                     "id": "37ad6cf1c51a33ba25f50a8f106e2b06f9e1963296c5bfd914c0d71b7bad42e6",
                     "schema": {
                       "$schema": "http://json-schema.org/draft-07/schema#",
-                      "description": "Dock Schema Example",
+                      "description": "MDIP Schema Example",
                       "type": "object",
                       "properties": {
                         "id": {
@@ -1122,7 +1122,7 @@ paths:
                 id: 1a678fe6973f34d2a5c016cbff357161b9a595f5cc44a3e15f1eca2a404f294a
                 schema:
                   $schema: http://json-schema.org/draft-07/schema#
-                  description: Dock Schema Example
+                  description: MDIP Schema Example
                   type: object
                   properties:
                     id:
