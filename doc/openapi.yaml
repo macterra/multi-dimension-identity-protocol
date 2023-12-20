@@ -70,6 +70,37 @@ components:
         - Ed25519Signature2018
         - EcdsaSecp256k1Signature2019
         - Bls12381BBS+SignatureDock2022
+    PublicKey:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "key-1"
+        type:
+          type: string
+          example: "EcdsaSecp256k1VerificationKey2019"
+        publicKeyJwk:
+          $ref: '#/components/schemas/PublicKeyJwk'
+        purposes:
+          type: array
+          items:
+            type: string
+          example: ["authentication"]
+    PublicKeyJwk:
+      type: object
+      properties:
+        kty:
+          type: string
+          example: "EC"
+        crv:
+          type: string
+          example: "secp256k1"
+        x:
+          type: string
+          example: "4iQpf1BVU9OgARmu7NQSGcHs5AKtwzBsCwI1PbRhhLU"
+        y:
+          type: string
+          example: "u-b-vMlJ3pEbP1siGmyvB_ZwCM7mOgSdHXLxzt5TIGg"
     ProofPurpose:
       description: Purpose of credential
       type : string
@@ -390,16 +421,13 @@ paths:
             schema:
               type: object
               properties:
-                did:
-                  $ref: '#/components/schemas/DID'
                 controller:
                   $ref: '#/components/schemas/DID'
-                publicKeys:
-                  $ref: '#/components/schemas/KeyType'
+                publicKey:
+                  $ref: '#/components/schemas/PublicKey'
               example:
                 {
-                    "publicKeys": [
-                        {
+                    "publicKey": {
                             "id": "key-1",
                             "type": "EcdsaSecp256k1VerificationKey2019",
                             "publicKeyJwk": {
@@ -412,7 +440,6 @@ paths:
                                 "authentication"
                             ]
                         }
-                    ]
                 }
       responses:
         '200':
