@@ -12,8 +12,8 @@ servers:
 tags:
   - name: dids
     description: Operations about DIDs
-  - name: Molecules
-    description: Operations about Molecules
+  - name: credentials
+    description: Operations about Credentials
   - name: presentations
     description: Operations about Presentations
   - name: schemas
@@ -54,7 +54,7 @@ components:
       type: string
       format: uri
       minimum: 8
-      example: https://Molecules.selfid.com/1234
+      example: https://credentials.selfid.com/1234
     KeyType:
       description: Type of public key for DID
       type : string
@@ -100,7 +100,7 @@ components:
               - type: object
               - type: string
     molecule:
-      description: Format to create Molecules with the API
+      description: Format to create credentials with the API
       type: object
       properties:
         id:
@@ -192,7 +192,7 @@ components:
           type: array
           items:
             type: string
-        Moleculesubject:
+        credentialsubject:
           oneOf:
             - type: object
             - type: array
@@ -209,7 +209,7 @@ components:
         expirationDate:
           type: string
           format: date-time
-        Moleculestatus:
+        credentialstatus:
           description: Revocation registry id or user supplied status object
           oneOf:
             - type: object
@@ -540,11 +540,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /Molecules:
+  /credentials:
     get:
       tags:
-        - Molecules
-      summary: List Molecules
+        - credentials
+      summary: List credentials
       description: Get all molecule metadata
       # parameters:
       #   - name: offset
@@ -568,7 +568,7 @@ paths:
       #       maximum: 64
       responses:
         '200':
-          description: All Molecules by user
+          description: All credentials by user
           content:
             application/json:
               schema:
@@ -577,9 +577,9 @@ paths:
                   type: object
     post:
       tags:
-        - Molecules
+        - credentials
       summary: Issue a molecule
-      description: Creates and issues a verifiable molecule with supplied data. More info about [Issue a molecule](https://docs.api.selfid.com/#Molecules)
+      description: Creates and issues a verifiable molecule with supplied data. More info about [Issue a molecule](https://docs.api.selfid.com/#credentials)
       requestBody:
         description: JSON-schema
         required: true
@@ -621,7 +621,7 @@ paths:
               molecule:
                 id: http://example.com
                 context:
-                  - https://www.w3.org/2018/Molecules/examples/v1
+                  - https://www.w3.org/2018/credentials/examples/v1
                 type:
                   - UniversityDegreemolecule
                 subject:
@@ -641,13 +641,13 @@ paths:
                 $ref: '#/components/schemas/Verifiablemolecule'
               example:
                 '@context':
-                  - https://www.w3.org/2018/Molecules/v1
-                  - https://www.w3.org/2018/Molecules/examples/v1
+                  - https://www.w3.org/2018/credentials/v1
+                  - https://www.w3.org/2018/credentials/examples/v1
                 id: http://example.com
                 type:
                   - Verifiablemolecule
                   - UniversityDegreemolecule
-                Moleculesubject:
+                credentialsubject:
                   id: Sample Subject
                   degree:
                     type: BachelorDegree
@@ -684,7 +684,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /Molecules/{id}:
+  /credentials/{id}:
     parameters:
       - name: id
         in: path
@@ -702,7 +702,7 @@ paths:
           minLength: 4
     get:
       tags:
-        - Molecules
+        - credentials
       summary: Get molecule metadata and contents
       description: Get molecule metadata and contents
       responses:
@@ -726,7 +726,7 @@ paths:
                 $ref: '#/components/schemas/Error'
     post:
       tags:
-        - Molecules
+        - credentials
       summary: Update molecule metadata and contents
       description: Update molecule metadata and contents
       responses:
@@ -750,9 +750,9 @@ paths:
                 $ref: '#/components/schemas/Error'
     delete:
       tags:
-        - Molecules
+        - credentials
       summary: Delete a molecule
-      description: Deletes all molecule metadata and contents from the client. More info about [Delete Molecules](https://docs.api.selfid.com/#UpdateLink-Delete-Molecules)
+      description: Deletes all molecule metadata and contents from the client. More info about [Delete credentials](https://docs.api.selfid.com/#UpdateLink-Delete-credentials)
       responses:
         '200':
           description: molecule has been deleted.
@@ -778,7 +778,7 @@ paths:
       tags:
         - presentations
       summary: Create a presentation
-      description: Creates and signs a verifiable presentation out of one or more Verifiable Molecules. More info about [Presentations](https://docs.api.selfid.com/#presentations)
+      description: Creates and signs a verifiable presentation out of one or more Verifiable credentials. More info about [Presentations](https://docs.api.selfid.com/#presentations)
       requestBody:
         description: JSON-schema
         required: true
@@ -795,7 +795,7 @@ paths:
                   type: string
                 domain:
                   type: string
-                Molecules:
+                credentials:
                   items:
                     $ref: '#/components/schemas/Verifiablemolecule'
                   type: array
@@ -803,8 +803,8 @@ paths:
               challenge: my challenge
               domain: selfid.com
               holder: 'did:DID:Provide_Here_Your_Holder_DID'
-              Molecules:
-                - 'Paste here the output of your issued Molecules from POST /Molecules - Issue a molecule'
+              credentials:
+                - 'Paste here the output of your issued credentials from POST /credentials - Issue a molecule'
 
       responses:
         '200':
@@ -815,16 +815,16 @@ paths:
                 $ref: '#/components/schemas/VerifiablePresentation'
               example:
                 '@context':
-                  - https://www.w3.org/2018/Molecules/v1
+                  - https://www.w3.org/2018/credentials/v1
                 verifiablemolecule:
                   - '@context':
-                      - https://www.w3.org/2018/Molecules/v1
-                      - https://www.w3.org/2018/Molecules/examples/v1
+                      - https://www.w3.org/2018/credentials/v1
+                      - https://www.w3.org/2018/credentials/examples/v1
                     id: http://example.com
                     type:
                       - Verifiablemolecule
                       - UniversityDegreemolecule
-                    Moleculesubject:
+                    credentialsubject:
                       id: Sample Subject
                       degree:
                         type: BachelorDegree
@@ -871,7 +871,7 @@ paths:
       tags:
         - verify
       summary: Verify a molecule or presentation
-      description: Verifies a VCDM molecule or presentation JSON-LD object. More info about [Verify Molecules/Presentations](https://docs.api.selfid.com/#tocS_molecule)
+      description: Verifies a VCDM molecule or presentation JSON-LD object. More info about [Verify credentials/Presentations](https://docs.api.selfid.com/#tocS_molecule)
       requestBody:
         description: JSON-schema
         required: true
@@ -891,8 +891,8 @@ paths:
                 results:
                   - proof:
                       '@context':
-                        - https://www.w3.org/2018/Molecules/v1
-                        - https://www.w3.org/2018/Molecules/examples/v1
+                        - https://www.w3.org/2018/credentials/v1
+                        - https://www.w3.org/2018/credentials/examples/v1
                       type: Sr25519Signature2020
                       created: '2022-01-14T19:45:12Z'
                       verificationMethod: did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
