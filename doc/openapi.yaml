@@ -1,0 +1,1180 @@
+openapi: 3.0.2
+info:
+  version: '2'
+  title: MDIP API
+  description: |
+    MDIP (multi dimension identity protocol) provides a complete solution for creating and managing decentralized identities.
+servers:
+  - url: https://api-test.selfid.com
+    description: Sandbox server (uses test data)
+  - url: https://api.selfid.com
+    description: Production server (uses live data)
+tags:
+  - name: dids
+    description: Operations about DIDs
+  - name: Molecules
+    description: Operations about Molecules
+  - name: presentations
+    description: Operations about Presentations
+  - name: schemas
+    description: Operations about Schemas
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    accessToken:
+      type: apiKey
+      in: header
+      name: MDIP-API-TOKEN
+  schemas:
+    Error:
+      description: An API Error
+      type: object
+      properties:
+        status:
+          type: integer
+        type:
+          type: string
+        message:
+          type: string
+    Hex32:
+      description: 32 byte hex string. Ignoring higher base (base64) for similicity.
+      type : string
+      minimum: 64
+      maximum: 64
+    DID:
+      description: DID as fully qualified, typically. `did:mdip:` or 32 byte hex string
+      type: string
+      minimum: 32
+      example: did:mdip:xyz
+    URI:
+      description: Valid URI
+      type: string
+      format: uri
+      minimum: 8
+      example: https://Molecules.selfid.com/1234
+    KeyType:
+      description: Type of public key for DID
+      type : string
+      enum:
+        - sr25519
+        - ed25519
+        - secp256k1
+    SigType:
+      description: Type of signature
+      type : string
+      enum:
+        - Sr25519Signature2020
+        - Ed25519Signature2018
+        - EcdsaSecp256k1Signature2019
+        - Bls12381BBS+SignatureDock2022
+    ProofPurpose:
+      description: Purpose of molecule
+      type : string
+      enum:
+        - assertionMethod
+        - authentication
+    Context:
+      description: JSON-LD context
+      oneOf:
+        - type: array
+          items:
+            oneOf:
+              - type: string
+              - type: object
+        - type: string
+    DIDDoc:
+      description: DID document. The current set of properties is incomplete
+      type: object
+      properties:
+        "@context":
+          $ref: '#/components/schemas/Context'
+        id:
+          $ref: '#/components/schemas/DID'
+        authentication:
+          type: array
+          items:
+            oneOf:
+              - type: object
+              - type: string
+    molecule:
+      description: Format to create Molecules with the API
+      type: object
+      properties:
+        id:
+          type: string
+          format: uri
+        name:
+          type: string
+        description:
+          type: string
+        schema:
+          oneOf:
+            - type: object
+            - type: string
+              format: uri
+        context:
+          $ref: '#/components/schemas/Context'
+        type:
+          type: array
+          items:
+            type: string
+        subject:
+          oneOf:
+            - type: object
+            - type: array
+        issuer:
+          oneOf:
+            - type: string
+              $ref: '#/components/schemas/DID'
+            - type: object
+        issuanceDate:
+          type: string
+          format: date-time
+        expirationDate:
+          type: string
+          format: date-time
+        status:
+          description: Revocation registry id or user supplied status object
+          oneOf:
+            - type: object
+            - type: string
+    EncryptedWallet:
+      description: An encrypted Universal Wallet JSON-LD document
+      type: object
+    VerifiablePresentation:
+      description: Verifiable (signed) Presentation returned by API. The current set of properties is almost complete
+      type: object
+      properties:
+        "@context":
+          $ref: '#/components/schemas/Context'
+        id:
+          type: string
+          format: uri
+        type:
+          type: array
+          items:
+            type: string
+        verifiablemolecule:
+          oneOf:
+            - type: object
+              $ref: '#/components/schemas/Verifiablemolecule'
+            - type: array
+              items:
+                type: object
+                $ref: '#/components/schemas/Verifiablemolecule'
+        proof:
+          type: object
+          properties:
+            type:
+              $ref: '#/components/schemas/SigType'
+            proofPurpose:
+              $ref: '#/components/schemas/ProofPurpose'
+            verificationMethod:
+              type: string
+            created:
+              type: string
+              format: date-time
+            proofValue:
+              type: string
+    Verifiablemolecule:
+      description: Verifiable (signed) molecule returned by API. The current set of properties is almost complete
+      type: object
+      properties:
+        "@context":
+          $ref: '#/components/schemas/Context'
+        id:
+          type: string
+          format: uri
+        type:
+          type: array
+          items:
+            type: string
+        Moleculesubject:
+          oneOf:
+            - type: object
+            - type: array
+              items:
+                type: object
+        issuer:
+          oneOf:
+            - type: string
+              $ref: '#/components/schemas/DID'
+            - type: object
+        issuanceDate:
+          type: string
+          format: date-time
+        expirationDate:
+          type: string
+          format: date-time
+        Moleculestatus:
+          description: Revocation registry id or user supplied status object
+          oneOf:
+            - type: object
+            - type: string
+        proof:
+          type: object
+          properties:
+            type:
+              $ref: '#/components/schemas/SigType'
+            proofPurpose:
+              $ref: '#/components/schemas/ProofPurpose'
+            verificationMethod:
+              type: string
+            created:
+              type: string
+              format: date-time
+            proofValue:
+              type: string
+    VerificationResponse:
+      description: Whether a molecule/presentation/anchor is verified or not
+      type: object
+      properties:
+        verified:
+          type: boolean
+        results:
+          type: array
+          items:
+            type: object
+    Response:
+      description: Default response
+      type: object
+      properties:
+        code:
+          type: integer
+    ArrayResponse:
+      description: Default response
+      type: array
+      items:
+        type: object
+    ApiKey:
+      type: object
+      required:
+        - key
+        - created
+        - expires
+      properties:
+        ips:
+          type: array
+          items:
+            type: string
+        key:
+          type: string
+        created:
+          type: string
+        expires:
+          type: string
+    ApiKeys:
+      type: array
+      items:
+        $ref: '#/components/schemas/ApiKey'
+    ApiWebhook:
+      type: object
+      required:
+        - url
+        - events
+        - created
+        - status
+        - description
+        - secret
+      properties:
+        events:
+          type: array
+          items:
+            type: string
+        url:
+          type: string
+        created:
+          type: string
+        secret:
+          type: string
+        description:
+          type: string
+    ProofRequest:
+      type: object
+      properties:
+        # predicates:
+        #   type: object
+        #   description: Requested predicate specifications of proof request
+        #   additionalProperties:
+        #     $ref: '#/components/schemas/IndyProofReqPredSpec'
+        attributes:
+          type: object
+          description: Requested attribute specifications of proof request
+        name:
+          type: string
+          description: Proof request name
+          example: Proof request
+        nonce:
+          type: string
+          description: Nonce or challenge for the presentation to match
+          example: '1234567890'
+        qr:
+          type: string
+          description: QR code deep link for mobile wallet scanning
+      required:
+        - attributes
+        - name
+        # - predicates
+    ProofRequests:
+      type: array
+      items:
+        $ref: '#/components/schemas/ProofRequest'
+    ProofTemplateObject:
+      allOf:
+        - $ref: '#/components/schemas/ProofRequest'
+        - type: object
+          required:
+            - id
+            - created
+            - updated
+          properties:
+            id:
+              type: string
+              format: uuid
+            error:
+              type: string
+            created:
+              type: string
+              format: date-time
+            updated:
+              type: string
+              format: date-time
+    ProofRequestObject:
+      allOf:
+        - $ref: '#/components/schemas/ProofRequest'
+        - type: object
+          required:
+            - id
+            - verified
+            - created
+            - updated
+            - response_url
+          properties:
+            id:
+              type: string
+              format: uuid
+            error:
+              type: string
+            response_url:
+              type: string
+            verified:
+              type: boolean
+            presentation:
+              type: object
+            created:
+              type: string
+              format: date-time
+            updated:
+              type: string
+              format: date-time
+
+security:
+  - accessToken: []
+  - bearerAuth: []
+
+paths:
+  /dids:
+    post:
+      tags:
+        - dids
+      summary: Create DID
+      description: Creates a new DID on chain with an auto generated keypair, the controller will be the same as the DID unless otherwise specified. More info about [Create DID](https://docs.api.selfid.com/#create-did)
+      requestBody:
+        description: Properties of DID
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                did:
+                  $ref: '#/components/schemas/DID'
+                controller:
+                  $ref: '#/components/schemas/DID'
+                keyType:
+                  $ref: '#/components/schemas/KeyType'
+              example:
+                keyType: 'ed25519'
+      responses:
+        '200':
+          description: DID will be created on the network.
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/DID'
+              example:
+                id: "2436"
+                data:
+                  did: "did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo"
+                  hexDid: "0xd729a93bba53d7f3a4e81d7a3f4e61474d2736cbf4b872af7447342d5eede0c5"
+                  controller: "did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo"
+        '400':
+          description: Invalid params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '402':
+          description: Transaction limit reached or upgrade required to proceed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /dids/{did}:
+    parameters:
+      - name: did
+        in: path
+        required: true
+        description: A DID
+        schema:
+          $ref: '#/components/schemas/DID'
+    get:
+      tags:
+        - dids
+      summary: Resolve DID
+      description: Returns the complete information about the provided "did" which is provided via parameters text box. More info about [Get DID](https://docs.api.selfid.com/#resolve-did)
+
+      responses:
+        '200':
+          description: The DIDDoc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DIDDoc'
+              example:
+                '@context': "https://www.w3.org/ns/did/v1"
+                id: "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS"
+                authentication:
+                  "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS#keys-1"
+                assertionMethod:
+                  "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS#keys-1"
+                publicKey:
+                  - id: "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS#keys-1"
+                    type: "Sr25519VerificationKey2020"
+                    controller: "did:mdip:5EncrTiZ69AZptPJSJCeev1inay2NJcrXkFsxuSyfTALo96J"
+                    publicKeyBase58: "BFHGE7DyTM5HtAKz58pkJN4evS4yRtDMYaxqRYtzT5nj"
+        '404':
+          description: DID was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - dids
+      summary: Update DID
+      description: Updates the DID Document associated with this DID
+
+      responses:
+        '200':
+          description: The DIDDoc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DIDDoc'
+              example:
+                '@context': "https://www.w3.org/ns/did/v1"
+                id: "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS"
+                authentication:
+                  "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS#keys-1"
+                assertionMethod:
+                  "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS#keys-1"
+                publicKey:
+                  - id: "did:mdip:5DZQEuGNXAN3tHdaxmEWkPVs43yyumjaD6gRKoyTHHvsZxdS#keys-1"
+                    type: "Sr25519VerificationKey2020"
+                    controller: "did:mdip:5EncrTiZ69AZptPJSJCeev1inay2NJcrXkFsxuSyfTALo96J"
+                    publicKeyBase58: "BFHGE7DyTM5HtAKz58pkJN4evS4yRtDMYaxqRYtzT5nj"
+        '404':
+          description: DID was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - dids
+      summary: Delete (revoke) DID
+      description: Revokes a provided DID from the blockchain, further attempts to resolve this DID will return a revoked status instead of a DID document.
+      responses:
+        '200':
+          description: Will remove DID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DID'
+              example:
+                id: "2434"
+                data:
+                  "status": "pending"
+        '404':
+          description: DID does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '402':
+          description: Transaction limit reached or upgrade required to proceed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Something went wrong with deleting the DID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /Molecules:
+    get:
+      tags:
+        - Molecules
+      summary: List Molecules
+      description: Get all molecule metadata
+      # parameters:
+      #   - name: offset
+      #     in: query
+      #     description: How many items to offset by for pagination
+      #     required: false
+      #     schema:
+      #       type: integer
+      #       format: int32
+      #       default: 0
+      #       minimum: 0
+      #   - name: limit
+      #     in: query
+      #     description: How many items to return at one time (max 64)
+      #     required: false
+      #     schema:
+      #       type: integer
+      #       format: int32
+      #       default: 64
+      #       minimum: 1
+      #       maximum: 64
+      responses:
+        '200':
+          description: All Molecules by user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+    post:
+      tags:
+        - Molecules
+      summary: Issue a molecule
+      description: Creates and issues a verifiable molecule with supplied data. More info about [Issue a molecule](https://docs.api.selfid.com/#Molecules)
+      requestBody:
+        description: JSON-schema
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - molecule
+              properties:
+                persist:
+                  type: boolean
+                  default: false
+                  description: Whether to persist this molecule in our systems, giving it its own web page and import options
+                password:
+                  type: string
+                  maxLength: 32
+                  minLength: 4
+                  description: Password to encrypt this molecule with, required if persist is set to true
+                anchor:
+                  type: boolean
+                  default: false
+                  description: Anchor the molecule on the blockchain or not
+                template:
+                  type: string
+                  format: uuid
+                  description: The molecule template ID
+                algorithm:
+                  type: string
+                  maxLength: 32
+                  minLength: 4
+                  description: Optional algorithm parameter, such as mdipbbs+
+                molecule:
+                  $ref: '#/components/schemas/molecule'
+            example:
+              persist: false
+              anchor: true
+              template: templateid
+              molecule:
+                id: http://example.com
+                context:
+                  - https://www.w3.org/2018/Molecules/examples/v1
+                type:
+                  - UniversityDegreemolecule
+                subject:
+                  id: Sample Subject
+                  degree:
+                    type: BachelorDegree
+                    name: Bachelor of Science and Arts
+                issuer: Paste here your Dock DID i.e. did:mdip:xyz...
+                issuanceDate: '2020-08-24T14:15:22Z'
+
+      responses:
+        '200':
+          description: Example response of a created verifiable molecule.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verifiablemolecule'
+              example:
+                '@context':
+                  - https://www.w3.org/2018/Molecules/v1
+                  - https://www.w3.org/2018/Molecules/examples/v1
+                id: http://example.com
+                type:
+                  - Verifiablemolecule
+                  - UniversityDegreemolecule
+                Moleculesubject:
+                  id: Sample Subject
+                  degree:
+                    type: BachelorDegree
+                    name: Bachelor of Science and Arts
+                issuanceDate: '2020-08-24T14:15:22Z'
+                proof:
+                  type: Sr25519Signature2020
+                  created: '2022-01-14T19:45:12Z'
+                  verificationMethod: did:mdip:YourDIDValue#keys-1
+                  proofPurpose: assertionMethod
+                  proofValue: z7zTs4pVjGyj68WwsnJ6bCoK2CnWFBW5xmSBin7LxcgoYfzET4YXAZcTF9qQBTVhfVC5hK4FUWp9XAedq8Tep8J6
+                issuer: did:mdip:YourDIDValue
+        '400':
+          description: Invalid/insufficient molecule params.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '402':
+          description: Transaction limit reached or upgrade required to proceed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /Molecules/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: A valid URI
+        schema:
+          $ref: '#/components/schemas/URI'
+      - name: password
+        in: query
+        required: false
+        description: The encryption password used when issuing/storing the molecule
+        schema:
+          type: string
+          maxLength: 32
+          minLength: 4
+    get:
+      tags:
+        - Molecules
+      summary: Get molecule metadata and contents
+      description: Get molecule metadata and contents
+      responses:
+        '200':
+          description: The molecule metadata and contents (if password is supplied)
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: molecule was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Error retrieving the molecule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - Molecules
+      summary: Update molecule metadata and contents
+      description: Update molecule metadata and contents
+      responses:
+        '200':
+          description: The molecule metadata and contents
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: molecule was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Error retrieving the molecule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Molecules
+      summary: Delete a molecule
+      description: Deletes all molecule metadata and contents from the client. More info about [Delete Molecules](https://docs.api.selfid.com/#UpdateLink-Delete-Molecules)
+      responses:
+        '200':
+          description: molecule has been deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: molecule was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Error retrieving the molecule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /presentations:
+    post:
+      tags:
+        - presentations
+      summary: Create a presentation
+      description: Creates and signs a verifiable presentation out of one or more Verifiable Molecules. More info about [Presentations](https://docs.api.selfid.com/#presentations)
+      requestBody:
+        description: JSON-schema
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                holder:
+                  type: string
+                  $ref: '#/components/schemas/DID'
+                  required: true
+                challenge:
+                  type: string
+                domain:
+                  type: string
+                Molecules:
+                  items:
+                    $ref: '#/components/schemas/Verifiablemolecule'
+                  type: array
+            example:
+              challenge: my challenge
+              domain: selfid.com
+              holder: 'did:DID:Provide_Here_Your_Holder_DID'
+              Molecules:
+                - 'Paste here the output of your issued Molecules from POST /Molecules - Issue a molecule'
+
+      responses:
+        '200':
+          description: A Verifiable Presentation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiablePresentation'
+              example:
+                '@context':
+                  - https://www.w3.org/2018/Molecules/v1
+                verifiablemolecule:
+                  - '@context':
+                      - https://www.w3.org/2018/Molecules/v1
+                      - https://www.w3.org/2018/Molecules/examples/v1
+                    id: http://example.com
+                    type:
+                      - Verifiablemolecule
+                      - UniversityDegreemolecule
+                    Moleculesubject:
+                      id: Sample Subject
+                      degree:
+                        type: BachelorDegree
+                        name: Bachelor of Science and Arts
+                    issuanceDate: '2020-08-24T14:15:22Z'
+                    proof:
+                      type: Sr25519Signature2020
+                      created: '2022-01-15T18:57:11Z'
+                      verificationMethod: did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo#keys-1
+                      proofPurpose: assertionMethod
+                      proofValue: z3D9VbCs2meciPjrMfzFHc3nziZRmESscyosFtKNMVHUMYvC45Dva12AJU58azYEDjGHfgJtmBqVb3HMBAE2qt7wN
+                    issuer: did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo
+                id: https://creds.selfid.com/presentation/9ae34eeaa212a8aa7558df03c81fbe12
+                type:
+                  - VerifiablePresentation
+                proof:
+                  type: Sr25519Signature2020
+                  created: '2022-01-15T18:58:02Z'
+                  verificationMethod: did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo#keys-1
+                  proofPurpose: authentication
+                  challenge: my challenge
+                  domain: selfid.com
+                  proofValue: z2DbHkByXbHqnGTU5f54Q7QzRVMfSqmaiXqE562fFuZRdFdMGnjTZEFxnc8k4NKXiJpRyyvovJuixdLYahfMcDLkM
+        '400':
+          description: Invalid/insufficient molecule params.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '402':
+          description: Transaction limit reached or upgrade required to proceed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /verify:
+    post:
+      tags:
+        - verify
+      summary: Verify a molecule or presentation
+      description: Verifies a VCDM molecule or presentation JSON-LD object. More info about [Verify Molecules/Presentations](https://docs.api.selfid.com/#tocS_molecule)
+      requestBody:
+        description: JSON-schema
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: The verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResponse'
+              example:
+                verified: true
+                results:
+                  - proof:
+                      '@context':
+                        - https://www.w3.org/2018/Molecules/v1
+                        - https://www.w3.org/2018/Molecules/examples/v1
+                      type: Sr25519Signature2020
+                      created: '2022-01-14T19:45:12Z'
+                      verificationMethod: did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
+                      proofPurpose: assertionMethod
+                      proofValue: z7zTs4pVjGyj68WwsnJ6bCoK2CnWFBW5xmSBin7LxcgoYfzET4YXAZcTF9qQBTVhfVC5hK4FUWp9XAedq8Tep8J6
+                    verified: true
+                    verificationMethod:
+                      '@context': https://w3id.org/security/v2
+                      id: did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
+                      type: sec:Sr25519VerificationKey2020
+                      controller:
+                        id: did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5
+                        assertionMethod:
+                          - did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
+                        authentication:
+                          - did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
+                        publicKey: did:mdip:5D8GeZMBX6KCEYDwdyrfWnNqJjiXxgc539TibWT1c19N6gL5#keys-1
+                      publicKeyBase58: HLc4pieaW9njdLk6zitziVYU7LgVpqKDxDrDRCJCB1er
+        '400':
+          description: Invalid/insufficient molecule params.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /schemas:
+    post:
+      tags:
+        - schemas
+      summary: Create molecule Schema
+      description: Creates a JSON schema on the blockchain. More info about [Schema Creation](https://docs.api.selfid.com/#create-schema)
+      requestBody:
+        description: JSON-schema
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Schema will be created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: '2541'
+                data:
+                  id: 1a678fe6973f34d2a5c016cbff357161b9a595f5cc44a3e15f1eca2a404f294a
+                  schema:
+                    $schema: http://json-schema.org/draft-07/schema#
+                    description: Dock Schema Example
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      emailAddress:
+                        type: string
+                        format: email
+                      alumniOf:
+                        type: string
+                    required:
+                      - emailAddress
+                      - alumniOf
+                    additionalProperties: false
+                  author: did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo
+                  signature:
+                    Sr25519: '0xbaf7058531aa059c1c2140028bca5a52cbe37ffac62a4fe85038a5fbf4abdf33194be711ff2b73a238ce3350f8d3babf59494ed28a3905b1e901b4c81c425e87'
+                  uri: blob:mdip:5CfKsDHEkKjAa1P8W5Eb4Dd5WABWXkitYXV6sUGvpL3MUBh5
+        '400':
+          description: Invalid params like size not supported or not JSON.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - schemas
+      summary: List Schemas
+      description: Get all schemas created by user. More info about [List Schemas](https://docs.api.selfid.com/#list-schemas)
+      parameters:
+        - name: offset
+          in: query
+          description: How many items to offset by for pagination
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            minimum: 0
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 64)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 64
+            minimum: 1
+            maximum: 64
+      responses:
+        '200':
+          description: All schemas by user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                [
+                  {
+                    "id": "db0c559035226419b4061d7c725a6d7d8aeebd3acf784fd0d69c9a033f29a8d1",
+                    "schema": {
+                      "$schema": "http://json-schema.org/draft-07/schema#",
+                      "description": "Dock Schema Example",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "alumniOf": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                          "emailAddress",
+                          "alumniOf"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "author": "did:mdip:5F4w22xpYkH49UBsfUsuZNqoUjjPvXD3LCzAjaehZcByoVo2",
+                    "uri": "blob:mdip:5H1v1QyQ7pUzksdXraprTYHiaBqRgjgeFJHrVHdCXtCky5dG"
+                  },
+                  {
+                    "id": "f408d91da3ebab27f2d50150f7cf54ab14099b3ab5f53e2cbf208a90d6adbfd7",
+                    "schema": {
+                      "$schema": "http://json-schema.org/draft-07/schema#",
+                      "description": "Dock Schema Example",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "alumniOf": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                          "emailAddress",
+                          "alumniOf"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "author": "did:mdip:5F8RiBpQkeheVXn4rFYRDSFAe7gvRMTFeZmu4N1e4UZbyvXy",
+                    "uri": "blob:mdip:5HagAnLRP5TmwNw9FSemkWeq4YMTCrgrS8CqY96jyRHCAymr"
+                  },
+                  {
+                    "id": "37ad6cf1c51a33ba25f50a8f106e2b06f9e1963296c5bfd914c0d71b7bad42e6",
+                    "schema": {
+                      "$schema": "http://json-schema.org/draft-07/schema#",
+                      "description": "Dock Schema Example",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "alumniOf": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                          "emailAddress",
+                          "alumniOf"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "author": "did:mdip:5F8RiBpQkeheVXn4rFYRDSFAe7gvRMTFeZmu4N1e4UZbyvXy",
+                    "uri": "blob:mdip:5DKi1USLGsHmf6jEF5JL1oejasmgUfboi5qDTjBA4Dhzrs2i"
+                  }
+                ]
+
+  /schemas/{schemaId}:
+    parameters:
+      - name: schemaId
+        in: path
+        required: true
+        description: A schema id
+        schema:
+          $ref: '#/components/schemas/Hex32'
+    get:
+      tags:
+        - schemas
+      summary: Get Schema
+      description: Returns the JSON schema for a specific ID. More info about [Get Schema By ID](https://docs.api.selfid.com/#get-schema)
+      responses:
+        '200':
+          description: Schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: '#/components/schemas/Hex32'
+                  schema:
+                    type: object
+        '404':
+          description: Schema was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 1a678fe6973f34d2a5c016cbff357161b9a595f5cc44a3e15f1eca2a404f294a
+                schema:
+                  $schema: http://json-schema.org/draft-07/schema#
+                  description: Dock Schema Example
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    emailAddress:
+                      type: string
+                      format: email
+                    alumniOf:
+                      type: string
+                  required:
+                    - emailAddress
+                    - alumniOf
+                  additionalProperties: false
+                author: did:mdip:5GvpXbSA7gQvybPEXcbs7LujLefQiMo2LkFvRyBZLuHDLbFo
+                uri: blob:mdip:5CfKsDHEkKjAa1P8W5Eb4Dd5WABWXkitYXV6sUGvpL3MUBh5
+    delete:
+      tags:
+        - schemas
+      summary: Delete Schema
+      description: Deletes a schema from the database
+      responses:
+        '200':
+          description: Schema has been deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: "2434"
+                data:
+                  "status": "pending"
+        '404':
+          description: Schema does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Something went wrong with deleting the schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Something went wrong with deleting the schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
